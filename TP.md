@@ -1,4 +1,4 @@
-# Assembly for newbies
+# Assemblies for newbies
 ## Steps
 
 1. Assemble
@@ -8,21 +8,41 @@
 5. 1.
 
 
-## Your first Assembly!
 
-#### Context
 
-#### Play with datasets
+## Context
 
-How many bases is there in the datasets?
+Imagine there is a cholera outbreak in Krumlov. “Luckily” you have access to nearby sequencers and we produced datasets from bacterial isolates to sequence. So you have both a PacBio run and an Illumina run. Now the task is to assemble the data in order to do various analyses later: check the phylogeny of that strain, what makes it different from other strains in terms of gene content, SNPs, structural variants, etc.. And remember: don’t drink the water, it’s a known vector of contamination. Czech beer is perfectly safe though.
 
-What is you mean read length?
+You are given several sequencing datasets from the same organism:  V. cholerae, which has a genome size of ~4 Mbp. The goal is to perform an assembly of the V. cholerae genome. It is known that the genome has 2 chromosomes and has around 3,800 annotated genes.
 
-Find your longest read!
+The following datasets are provided in the Workshop AMI (in ~/workshop_materials/assembly/) but can also be downloaded by using the ERRxxxxxx identifiers on the Sequence Read Archive. See how at the end of this tutorial.
 
-What is the estimated coverage?
+PacBio sequencing (these are raw noisy “CLR” reads, not “CCS” or high fidelity  reads):
+ERR1716491.fastq
+Illumina sequencing (paired-end interleaved, insert size 150 bp):
+SRR531199.fastq
 
-Make datasets containing 10% of the initial coverage to make "quick" assembly test.
+The Part 1 consist to play a bit with the two datasets and have a rough idea of the characteristic of the available datasets.
+
+The goal of Part 2 is to obtain a quick, initial assembly of the V. cholerae genome using any of these datasets.
+You could use any of the assemblers which have been pre-installed on your Instance. “But, which one”, you ask? Well, the point of this part is to let you to take initiatives and pick one!
+So, for this first attempt, if the assembler asks for any parameter, try to guess a reasonable value but do not over-think it. At this point, it does not matter if the assembly is of poor quality.
+In the step you can try to work with a sub sampling of your datasets to accelerate the process.
+
+In the Part 3 , you will measure the quality of your initial assembly and recognize that it could possibly be improved. Once you have generated your first assembly, move to Part 2. If you are stuck, don’t panic, either ask a TA or follow the detailed steps below.
+
+## PART 1: Play with datasets
+
+*How many bases is there in the datasets?*
+
+*What is you mean read length?*
+
+*Find your longest read!*
+
+*What is the estimated coverage?*
+
+*Make datasets containing 10% of the initial coverage to make "quick" assembly test.*
 
 HINT: Use seqkit
 
@@ -32,19 +52,23 @@ My commands :
   seqkit sort -l ERR1716491.fasta -r --line-width 0 > LRS.fasta
   seqkit sample -p 0.1 ERR1716491.fasta --line-width 0 > LR_0.1.fa
 ```
+## PART 2: Your first assembly
 
-#### Installed assemblers
-###### Long reads assembler
-1. Miniasm (https://github.com/lh3/miniasm)
-2. Raven (https://github.com/lbcb-sci/raven)
-3. Flye (https://github.com/fenderglass/Flye)
+### Available assemblers
+##### Long reads assemblers
+1. Miniasm
+2. Raven
+3. Flye
 
 
 1. Miniasm
-Work in two steps:
+
+  Miniasm Work in two steps:
   1. Find overlaps (minimap2)
   2. Second generate contigs (miniasm)
   3. Miniasm do not include a polishing step, you can try minipolish(https://github.com/rrwick/Minipolish)
+
+  Website: https://github.com/lh3/miniasm
 ```
 minimap2 -x ava-pb -t8 ERR1716491.fastq.gz ERR1716491.fastq.gz | gzip -1 > reads.paf.gz
  miniasm -f ERR1716491.fastq.gz reads.paf.gz > assembly.gfa
@@ -55,13 +79,20 @@ minimap2 -x ava-pb -t8 ERR1716491.fastq.gz ERR1716491.fastq.gz | gzip -1 > reads
 ```
 raven LR_0.1.fa  --graphical-fragment-assembly raven_graph.gfa -t 8 > raven_contigs.fa
 ```
-
+Website: https://github.com/lbcb-sci/raven
 3. Flye
 ```
  flye --pacbio-raw LR_0.1.fa --threads 8 --out-dir flye01  --genome-size 4000000
  ```
+ Website: https://github.com/fenderglass/Flye
 
-###### Short reads assembler
+###### Short reads assemblers
+1. Spades
+2. MEGAHIT
+3. Minia
+
+
+
 1. Spades
 
   Spades is an Illumina assembler designed for prokaryotic and small eukaryotic genomes. It does an excellent job at assembling bacteria with short read sequencing, either multi-cell or single-cell data, and also small metagenomes. It uses multiple size of k to construct the best possible contigs. It takes generally longer time and memory than other assemblers. It can also improve its contigs using long reads.
@@ -93,30 +124,31 @@ raven LR_0.1.fa  --graphical-fragment-assembly raven_graph.gfa -t 8 > raven_cont
 
 3. Minia
 
-Minia is an Illumina assembler designed to be ressources efficient and able to assemble very large genomes.
-You can run the GATB pipeline that correct the reads (Bloocoo), generate contigs (Minia) and scafold them (BESST)
-```
-./gatb --12 interleaved_reads.fastq
-```
+  Minia is an Illumina assembler designed to be ressources efficient and able to assemble very large genomes.
+  You can run the GATB pipeline that correct the reads (Bloocoo), generate contigs (Minia) and scafold them (BESST)
+  ```
+  ./gatb --12 interleaved_reads.fastq
+  ```
 
-Website: https://github.com/GATB/gatb-minia-pipeline
+  Website: https://github.com/GATB/gatb-minia-pipeline
 
 
 ### Other assemblers (long reads)
 
-+ Canu
-+ Redbean
-+ FALCON
-+ SMARTdenovo
++ Canu (https://github.com/marbl/canu/commits/master)
++ Redbean (https://github.com/ruanjue/wtdbg2)
++ FALCON (https://github.com/PacificBiosciences/FALCON)
++ SMARTdenovo (https://github.com/ruanjue/smartdenovo)
 
 ### Other assemblers (short reads)
 
-+ AByss
-+ Unicycler
-+ Discovardenovo
++ AByss (https://github.com/bcgsc/abyss)
++ Unicycler (https://github.com/rrwick/Unicycler)
++ Discovardenovo (https://software.broadinstitute.org/software/discovar/blog/)
 
-## Assembly Evaluation
+## PART 3: Assembly Evaluation
 
+### Evaluate your assembly with Quast
 Use Quast. A manual can be found here http://quast.bioinf.spbau.ru/manual.html.
 ```
 ./gatb quast.py -o output_directory assembly.fa
@@ -127,46 +159,55 @@ Now use Quast to align your contigs on your reference genome and estimate their 
 ```
 ./gatb quast.py -o output_directory assembly.fa -r vcholerae_h1.fasta
 ```
-How many large / small misassemblies were made by the assembler?
+*How many large / small misassemblies were made by the assembler?*
 
-What part of your genome is covered by your contigs?
+*What part of your genome is covered by your contigs?*
 
 If your contigs contain too many errors quast will not align them on the reference. In such cases (ie miniasm unpolished assembly) you can use the --min-identity quast parameter.
 ```
 ./gatb quast.py -o output_directory assembly.fa -r vcholerae_h1.fasta  --min-identity 0.8
 ```
+### Visualize your assembly graph (optionnal)
 
 Use the Bandage software to visualize the assembly graph.
 It is generally the file that ends with “.gfa”
+If you do not have a gfa files you may skip this step.
 ```
 Bandage assembly.gfa
 ```
 
-Is your graph well connected?
+*Is your graph well connected?*
 
-How many disjoint component is there?
+*How many disjoint component is there?*
 
-Does the graph has many branching nodes?
+*Does the graph has many branching nodes?*
 
 
-Annotate the assembly
+### Annotate your assembly
 You may use the tool Prokka to annotate the assembly.
 ```
 prokka assembly_file
 ```
 
-How many annotated proteins were predicted by Prokka?
+*How many annotated proteins were predicted by Prokka?*
 ```
 wc -l output.faa
 ```
 Across all reported assemblies in the Google Docs, what is the variability of the number of annotated genes?
+### Call SNP (Optionnal)
+Actually the reference genome, the Illumina and  Pacbio datasets aren’t from the same exact strain so they may differ one from another.
+To visualize thoses differences, you may align your Illumina reads to the reference genome and/or a Pacbio assembly and call SNPs.
+To do so you may use  samtools mpileup: http://samtools.sourceforge.net/mpileup.shtml.
 
+*How many SNPs were found between the two strains?*
 
-## Assembly comparison
+As a check, do the same procedure by aligning reads from the Illumina dataset to an Illumina-only assembly.
 
-Report your assembly on google doc and compare with the results from the other participants.
+Does SNP calling of a dataset on its own assembly report “false positive” SNPs?
+
+## Part 4 Assembly comparison
+
+*Report your assembly on google doc and compare with the results from the other participants.*
 
 
 At this point, you may be tempted to re-run your assembly with better parameters, with a higher coverage or to test another assembler. This is the time to do so!
-
-## Improve your assembly

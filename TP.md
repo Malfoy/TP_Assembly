@@ -63,6 +63,12 @@ My commands :
 
 1. Miniasm
 
+Miniasm is a rather special long read assembler as it does not include a consensus step.
+The resulting contigs are just merged erroneous long reads and still contains many sequencing errors.
+Produced contigs are structurally correct, but at the nucleotide level, there are many many mismatches and indels.
+For most application the contigs need to be polished. E.g. using the Racon software
+or minipolish than use it aproprietly to correct the contigs errors.
+
   Miniasm Work in two steps:
   1. Find overlaps (minimap2)
   2. Second generate contigs (miniasm)
@@ -76,15 +82,32 @@ minimap2 -x ava-pb -t8 ERR1716491.fastq.gz ERR1716491.fastq.gz | gzip -1 > reads
 ```
 
 2. Raven
+
+Raven is an improved version of Ra that is based on existing components: minimap, racon (polishing), but with layout stage.
 ```
 raven LR_0.1.fa  --graphical-fragment-assembly raven_graph.gfa -t 8 > raven_contigs.fa
 ```
 Website: https://github.com/lbcb-sci/raven
+
+
 3. Flye
+
+Flye is a long read assembler based on a original paradigm. It build a repeat graph that is conceptually similar to  De Bruijn graph but using approximate matches.
+Flye is also able to assemble metagenomes.
+
 ```
  flye --pacbio-raw LR_0.1.fa --threads 8 --out-dir flye01  --genome-size 4000000
  ```
  Website: https://github.com/fenderglass/Flye
+
+
+4. Canu
+
+Canu is one of the reference assemblers for long reads data. It gives very good results, however in the context of this workshop it might take a while to run and
+will not be used for this workshop.
+
+
+ Website: https://github.com/marbl/canu
 
 ###### Short reads assemblers
 1. Spades
@@ -149,16 +172,27 @@ Website: https://github.com/lbcb-sci/raven
 ## PART 3: Assembly Evaluation
 
 ### Evaluate your assembly with Quast
-Use Quast. A manual can be found here http://quast.bioinf.spbau.ru/manual.html.
+To Evaluate your assembly you will run  Quast on your contigs file.
+
+ A (very nice) manual can be found here http://quast.bioinf.spbau.ru/manual.html.
 ```
 ./gatb quast.py -o output_directory assembly.fa
 ```
 
-Now use Quast to align your contigs on your reference genome and estimate their accuracy
+ Move into your QUAST output directory and examine the report.txt file. You may also take a look at the HTML file.
+
+ Note only "large enough" contigs will be considered, contigs smaller than 500bp are ignored by Quast.
+
+Now we will compare your contigs with the reference genome.
+With the -r option, Quast will align your contigs on your reference genome and estimate their accuracy
 
 ```
 ./gatb quast.py -o output_directory assembly.fa -r vcholerae_h1.fasta
 ```
+
+
+In real life you will likely not have a reference genome, but if you have a closely related genome you can use it as reference and get some nice stats from QUAST such as ‘genome fraction’ (=genome coverage).
+
 *How many large / small misassemblies were made by the assembler?*
 
 *What part of your genome is covered by your contigs?*
@@ -170,7 +204,8 @@ If your contigs contain too many errors quast will not align them on the referen
 ### Visualize your assembly graph (optionnal)
 
 Use the Bandage software to visualize the assembly graph.
-It is generally the file that ends with “.gfa”
+It is generally the file that ends with “.gfa”.
+
 If you do not have a gfa files you may skip this step.
 ```
 Bandage assembly.gfa
@@ -180,7 +215,13 @@ Bandage assembly.gfa
 
 *How many disjoint component is there?*
 
+This provides some indications of whether you had sufficient coverage to perform the assembly. It could also mean that the sequencer produced some sequences that did not overlap others.
+
 *Does the graph has many branching nodes?*
+
+This is indicative of variants or repetitions that could not have been resolved by the assembler.
+
+
 
 
 ### Annotate your assembly
@@ -193,6 +234,9 @@ prokka assembly_file
 ```
 wc -l output.faa
 ```
+
+
+
 Across all reported assemblies in the Google Docs, what is the variability of the number of annotated genes?
 ### Call SNP (Optionnal)
 Actually the reference genome, the Illumina and  Pacbio datasets aren’t from the same exact strain so they may differ one from another.
@@ -203,7 +247,7 @@ To do so you may use  samtools mpileup: http://samtools.sourceforge.net/mpileup.
 
 As a check, do the same procedure by aligning reads from the Illumina dataset to an Illumina-only assembly.
 
-Does SNP calling of a dataset on its own assembly report “false positive” SNPs?
+*Does SNP calling of a dataset on its own assembly report “false positive” SNPs?*
 
 ## Part 4 Assembly comparison
 
